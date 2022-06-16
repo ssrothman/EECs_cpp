@@ -30,3 +30,6 @@
 *.exe
 *.out
 *.app
+
+#swig-wrapped file
+eec_back_wrap.cc

@@ -385,7 +385,7 @@ void eec_onejet(float* jet, int nPart, int nFeat, int N,
   std::cout << "doing a jet with " << nPart << " particles, the first of which has pT " << jet[0] << std::endl;
 #endif
   
-  if(nDR!=nWT || nDR!=choose(nPart, 2)){
+  if(nDR!=nWT || nDR!=(int)choose(nPart, 2)){
     std::cerr << "Error: must have len(dRs) == len(wts) == nPart choose 2" << std::endl;
     return;
   }
@@ -393,7 +393,7 @@ void eec_onejet(float* jet, int nPart, int nFeat, int N,
   //fill dR vector
   fillDR2(jet, nPart, dRs);
 
-  for(size_t i=0; i<nDR; ++i){
+  for(int i=0; i<nDR; ++i){
     wts[i] = 0;
   }
 
@@ -482,7 +482,7 @@ void eec(float* jets, int nPartTot, int nFeat,
     std::cerr << "Error: nFeat must be 3" << std::endl;
     return;
   }
-  for(size_t i=0; i<nDRTot; ++i){
+  for(int i=0; i<nDRTot; ++i){
     wts[i]=0;
     dRs[i]=0;
   }
@@ -490,7 +490,7 @@ void eec(float* jets, int nPartTot, int nFeat,
 
   size_t prevJetIdx = 0, prevDRIdx = 0;
   idx_t nPart, nDR;
-  for(size_t i=0; i<nJets; ++i){
+  for(int i=0; i<nJets; ++i){
     nPart = jetIdxs[i] - prevJetIdx;
     nDR = dRIdxs[i] - prevDRIdx;
     eec_onejet(&jets[3*prevJetIdx], nPart, nFeat, N, 

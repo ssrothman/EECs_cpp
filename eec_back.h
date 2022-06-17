@@ -27,4 +27,7 @@ void eec(float *jets, int nPartTot, int nFeat, int* jetIdxs, int nJets, int N,
           int* dRIdxs, int nDRIdxs,
           int maxL);
 
+size_t choose(idx_t n, idx_t k);
+
+
 #endif

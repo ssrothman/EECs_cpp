@@ -5,6 +5,9 @@
 
 #include <iostream>
 #include <algorithm>
+#include <array>
+
+#define TESTPROJ
 
 #ifdef TESTPROJ 
 #define TEST
@@ -14,19 +17,36 @@
 #define TEST
 #endif
 
+
+template <unsigned int N>
 float getWt(const float* const pt,
             const int nPart,
-            const int N,
             const std::vector<int>& ord,
             const int M,
             const comp_t& compositions,
-            const factor_t& symFactors) {
+            const factor_t& symFactors,
+            std::vector<std::vector<std::array<int,N+1>>>* tuples=nullptr,
+            const int iDR=0) {
   float result = 0;
   for (size_t i = 0; i < compositions[M - 1].size(); ++i) {  //for each composition
     float nextWt = symFactors[M - 1][i];
     for (size_t j = 0; j < compositions[M - 1][i].size(); ++j) {  //for each element
       nextWt *= intPow(pt[ord[j]], compositions[M - 1][i][j]);
+
     }  //end for each element
+    if(tuples){
+      std::array<int,N+1> arr;
+      unsigned int iarr = 0;
+      arr[iarr++] = symFactors[M-1][i];
+
+      for(unsigned int iord=0; iord<ord.size(); ++iord){
+        for(unsigned int icopy=0; icopy<compositions[M-1][i][iord]; ++icopy){
+          arr[iarr++] = ord[iord];
+        }
+      }
+
+      (*tuples)[iDR].push_back(arr);
+    }
     result += nextWt;
   }  //end for each composition
 
@@ -40,12 +60,12 @@ float getWt_nonIRC(const float* const pt,
   return intPow(pt[i], p1) * intPow(pt[j], p2);
 }
 
+template <unsigned int N>
 void projectedMway(const float* const pt,
                    const float* const eta,
                    const float* const phi,
                    const int nPart,
 
-                   const int N,
                    const int M,
 
                    const std::vector<float>& dRs,
@@ -56,7 +76,9 @@ void projectedMway(const float* const pt,
 
                    const std::vector<int>* const cache,
                    const int L,
-                   std::vector<int>* newCache) {
+                   std::vector<int>* newCache,
+                   
+                   std::vector<std::vector<std::array<int,N+1>>>* tuples=nullptr) {
   /*
      * compute the weight contribution from 
      * M-way combinations of particles
@@ -119,7 +141,7 @@ void projectedMway(const float* const pt,
         iterate(L, ordL, M);
       }  //end iterate over L-way combinations of M elements
     }
-    float newWt = getWt(pt, nPart, N, ord, M, compositions, symFactors);
+    float newWt = getWt<N>(pt, nPart, ord, M, compositions, symFactors, tuples, bestIdx);
     wts[bestIdx] += newWt;
     if (newCache)
       (*newCache)[getIndex(ord, nPart)] = bestIdx;
@@ -127,12 +149,11 @@ void projectedMway(const float* const pt,
   }  //end iterate over M-way combinations of nPart elements
 }
 
+template <unsigned int N>
 void resolved3way(const float* const pt,
                   const float* const eta,
                   const float* const phi,
                   const int nPart,
-
-                  const int N,
 
                   std::vector<float>& dR1,
                   std::vector<float>& dR2,
@@ -190,17 +211,16 @@ void resolved3way(const float* const pt,
     dR1.push_back(Rs[0]);
     dR2.push_back(Rs[1]);
     dR3.push_back(Rs[2]);
-    wts.push_back(getWt(pt, nPart, N, ord, 3, compositions, symFactors));
+    wts.push_back(getWt<N>(pt, nPart, ord, 3, compositions, symFactors, nullptr, 0));
     iterate(3, ord, nPart);
   }
 }
 
+template <unsigned int N>
 void resolved4way(const float* const pt,
                   const float* const eta,
                   const float* const phi,
                   const int nPart,
-
-                  const int N,
 
                   std::vector<float>& dR1,
                   std::vector<float>& dR2,
@@ -274,19 +294,20 @@ void resolved4way(const float* const pt,
     dR5.push_back(Rs[4]);
     dR6.push_back(Rs[5]);
 
-    wts.push_back(getWt(pt, nPart, N, ord, 4, compositions, symFactors));
+    wts.push_back(getWt<N>(pt, nPart, ord, 4, compositions, symFactors, nullptr, 0));
     iterate(4, ord, nPart);
   }
 }
 
+template <unsigned int N>
 void projectedEEC(const float* const pt,
                   const float* const eta,
                   const float* const phi,
                   const int nPart,
-                  const int N,
                   const int maxL,
                   std::vector<float>& dRs, 
-                  std::vector <float>& wts) { 
+                  std::vector <float>& wts,
+                  std::vector<std::vector<std::array<int, N+1>>>* tuples) { 
   /*
    * EEC, projected onto shortest side
    * 
@@ -300,6 +321,8 @@ void projectedEEC(const float* const pt,
    * 
    * dRs: to be filled with dR values
    * wts: to be filled with weight values
+   *
+   * tuples: if not nullptr, to be filled with tuples contributing to each dR
    */
 
   //fill dR array
@@ -309,6 +332,12 @@ void projectedEEC(const float* const pt,
   //initialize zero weights
   wts.clear();
   wts.resize(dRs.size());
+
+  //initialize empty tuples array
+  if(tuples){
+    tuples->clear();
+    tuples->resize(dRs.size());
+  }
 
   //precompute compositions and symmetry factors
   comp_t compositions;
@@ -322,30 +351,35 @@ void projectedEEC(const float* const pt,
 
   for (int M = 2; M <= N; ++M) {
     if (M == 2) {
-      projectedMway(pt, eta, phi, 
+      projectedMway<N>(pt, eta, phi, 
                     nPart, 
-                    N, M, 
+                    M, 
                     dRs, wts, 
                     compositions, symFactors, 
-                    nullptr, 0, &newCache);
+                    nullptr, 0, &newCache,
+                    tuples);
     } else if (M <= maxL) {
       std::swap(cache, newCache);
-      projectedMway(pt, eta, phi, 
+      projectedMway<N>(pt, eta, phi, 
                     nPart, 
-                    N, M, 
+                    M, 
                     dRs, wts, 
                     compositions, symFactors, 
-                    &cache, M - 1, &newCache);
+                    &cache, M - 1, &newCache,
+                    tuples);
     } else {
-      projectedMway(pt, eta, phi, 
+      projectedMway<N>(pt, eta, phi, 
                     nPart, 
-                    N, M, 
+                    M, 
                     dRs, wts, 
                     compositions, symFactors, 
-                    &newCache, maxL, nullptr);
+                    &newCache, maxL, nullptr,
+                    tuples);
     }
   }
 }
+
+
 
 void EECnonIRC(const float* const pt,
                const float* const eta,
@@ -451,13 +485,13 @@ void full3ptEEC(const float* const pt,
 
   //start by computing 2-point component
   //already fully-resolved, so use projected function
-  projectedMway(pt, eta, phi, nPart, 3, 2, dR1, wts, compositions, symFactors, nullptr, 0, &cache);
+  projectedMway<3>(pt, eta, phi, nPart, 2, dR1, wts, compositions, symFactors, nullptr, 0, &cache);
   int n2 = choose(nPart, 2);
   dR2.insert(dR2.end(), n2, -1.);
   dR3.insert(dR3.end(), n2, -1.);
 
   //append 3-point component
-  resolved3way(pt, eta, phi, nPart, 3, dR1, dR2, dR3, wts, compositions, symFactors, cache);
+  resolved3way<3>(pt, eta, phi, nPart, dR1, dR2, dR3, wts, compositions, symFactors, cache);
 }
 
 void full4ptEEC(const float* const pt,
@@ -513,7 +547,7 @@ void full4ptEEC(const float* const pt,
 
   //start by computing 2-point component
   //already fully-resolved, so use projected function
-  projectedMway(pt, eta, phi, nPart, 4, 2, dR1, wts, compositions, symFactors, nullptr, 0, &cache);
+  projectedMway<4>(pt, eta, phi, nPart, 2, dR1, wts, compositions, symFactors, nullptr, 0, &cache);
   int n2 = choose(nPart, 2);
   dR2.insert(dR2.end(), n2, -1.);
   dR3.insert(dR3.end(), n2, -1.);
@@ -521,16 +555,19 @@ void full4ptEEC(const float* const pt,
   dR5.insert(dR5.end(), n2, -1.);
   dR6.insert(dR6.end(), n2, -1.);
 
-  resolved3way(pt, eta, phi, nPart, 4, dR1, dR2, dR3, wts, compositions, symFactors, cache);
+  resolved3way<4>(pt, eta, phi, nPart, dR1, dR2, dR3, wts, compositions, symFactors, cache);
   int n3 = choose(nPart, 3);
   dR4.insert(dR4.end(), n3, -1.);
   dR5.insert(dR5.end(), n3, -1.);
   dR6.insert(dR6.end(), n3, -1.);
 
-  resolved4way(pt, eta, phi, nPart, 4, dR1, dR2, dR3, dR4, dR5, dR6, wts, compositions, symFactors, cache);
+  resolved4way<4>(pt, eta, phi, nPart, dR1, dR2, dR3, dR4, dR5, dR6, wts, compositions, symFactors, cache);
 }
 
 #ifdef TESTPROJ
+
+#define ORDER 4
+
 int main() {
   float pT[] = {1., 2., 0.5, 2., 3.};
   float eta[] = {0., 0.1, 0.4, 1.0, 0.4};
@@ -539,14 +576,24 @@ int main() {
   float totalWT =0 ;
 
   std::vector<float> dRs, wts;
-  projectedEEC(pT, eta, phi, 5, 4, 10, dRs, wts);
+  std::vector<std::vector<std::array<int,ORDER+1>>> tuples;
+  projectedEEC<ORDER>(pT, eta, phi, 5, 10, dRs, wts, &tuples);
 
-  std::cout << "dR\twt" << std::endl;
+  std::cout << "ord\tdR\twt" << std::endl;
   size_t maxIter = dRs.size(), iter = 0;
   std::vector<int> ord = {0, 1};
   for (iter = 0; iter < maxIter; ++iter) {
     printOrd(ord);
     std::cout << ": " << dRs[iter] << "\t" << wts[iter] << std::endl;
+    std::cout << "\t[";
+    std::vector<std::array<int, ORDER+1>> arr = tuples[iter];
+    for(unsigned i=0; i<arr.size(); ++i){
+      std::cout << arr[i][0] << ": (";
+      for(unsigned j=1; j<ORDER; ++j)
+        std::cout << arr[i][j] << ", ";
+      std::cout << arr[i][ORDER] << "), ";
+    }
+    std::cout << "]" << std::endl;
     iterate(2, ord, 5);
     totalWT += wts[iter];
   }

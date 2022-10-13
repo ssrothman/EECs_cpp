@@ -30,4 +30,12 @@ void full4ptEEC(const float* const pt,
                 std::vector<float>& dR6,
                 std::vector<float>& wts);
 
+void EECnonIRC(const float* const pt,
+               const float* const eta,
+               const float* const phi,
+               const int nPart,
+               const int p1, const int p2,
+               std::vector<float>& dRs,
+               std::vector<float>& wts);
+
 #endif

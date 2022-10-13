@@ -33,6 +33,13 @@ float getWt(const float* const pt,
   return result;
 }
 
+float getWt_nonIRC(const float* const pt,
+                   const int nPart,
+                   const int i, const int j,
+                   const int p1, const int p2){
+  return intPow(pt[i], p1) * intPow(pt[j], p2);
+}
+
 void projectedMway(const float* const pt,
                    const float* const eta,
                    const float* const phi,
@@ -278,14 +285,14 @@ void projectedEEC(const float* const pt,
                   const int nPart,
                   const int N,
                   const int maxL,
-                  std::vector<float>& dRs,
-                  std::vector<float>& wts) {
+                  std::vector<float>& dRs, 
+                  std::vector <float>& wts) { 
   /*
    * EEC, projected onto shortest side
    * 
    * pt: particle pt, normalized to jet pt
    * eta: particle eta
-   * phi: particle phi,
+   * phi: particle  phi,
    * 
    * N: correaltor order
    * 
@@ -295,14 +302,10 @@ void projectedEEC(const float* const pt,
    * wts: to be filled with weight values
    */
 
-#ifdef TEST
-  std::cout << "top of projected EEC, order " << N << std::endl << std::endl;
-#endif
-
   //fill dR array
   dRs.clear();
   fillDR(eta, phi, nPart, dRs);
-
+ 
   //initialize zero weights
   wts.clear();
   wts.resize(dRs.size());
@@ -314,42 +317,80 @@ void projectedEEC(const float* const pt,
   factor_t symFactors;
   fillSymFactors(N, compositions, symFactors);
 
-#ifdef TEST
-  std::cout << "composition\tsymmetry factor" << std::endl;
-  for (unsigned i = 0; i < symFactors.size(); ++i) {
-    for (unsigned j = 0; j < symFactors[i].size(); ++j) {
-      printOrd(compositions[i][j]);
-      std::cout << " " << symFactors[i][j] << std::endl;
-    }
-  }
-  std::cout << std::endl;
-#endif
-
   std::vector<int> cache(0, 0);
   std::vector<int> newCache(0, 0);
 
   for (int M = 2; M <= N; ++M) {
     if (M == 2) {
-#ifdef TEST
-      std::cout << "doing M=2" << std::endl;
-#endif
-      projectedMway(pt, eta, phi, nPart, N, M, dRs, wts, compositions, symFactors, nullptr, 0, &newCache);
+      projectedMway(pt, eta, phi, 
+                    nPart, 
+                    N, M, 
+                    dRs, wts, 
+                    compositions, symFactors, 
+                    nullptr, 0, &newCache);
     } else if (M <= maxL) {
-#ifdef TEST
-      std::cout << "using old cache and making a new one" << std::endl;
-#endif
       std::swap(cache, newCache);
-      projectedMway(pt, eta, phi, nPart, N, M, dRs, wts, compositions, symFactors, &cache, M - 1, &newCache);
+      projectedMway(pt, eta, phi, 
+                    nPart, 
+                    N, M, 
+                    dRs, wts, 
+                    compositions, symFactors, 
+                    &cache, M - 1, &newCache);
     } else {
-#ifdef TEST
-      std::cout << "using old cache" << std::endl;
-#endif
-      projectedMway(pt, eta, phi, nPart, N, M, dRs, wts, compositions, symFactors, &newCache, maxL, nullptr);
+      projectedMway(pt, eta, phi, 
+                    nPart, 
+                    N, M, 
+                    dRs, wts, 
+                    compositions, symFactors, 
+                    &newCache, maxL, nullptr);
     }
   }
-#ifdef TEST
-  std::cout << std::endl;
-#endif
+}
+
+void EECnonIRC(const float* const pt,
+               const float* const eta,
+               const float* const phi,
+               const int nPart,
+               const int p1, const int p2,
+               std::vector<float>& dRs,
+               std::vector<float>& wts){
+  /*
+   * EEC, with non IRC-safe energy weighting
+   * Currently only support 2-way EEC
+   *
+   * pt: particle pt, normalized to jet pt,
+   * eta: particle eta
+   * phi: particle phi
+   * nPart: number of particles
+   *
+   * p1, p2: powers in correlator weighting (p1 = p2 = 1 is IRC-safe case)
+   * 
+   * dRs: to be filled with dR values
+   * wts: to be filled with weight values
+   */
+  //fill dR array
+  dRs.clear();
+  fillDR(eta, phi, nPart, dRs);
+ 
+  //initialize zero weights
+  wts.clear();
+  wts.resize(dRs.size());
+
+  //which pair?
+  std::vector<int> ord(2);
+  size_t maxIter = choose(nPart, 2);
+
+  //initialize 0th pair
+  ord[0] = 0;
+  ord[1] = 1;
+
+  for(size_t iter=0; iter<maxIter; ++iter){//for each pair
+    wts[iter] += getWt_nonIRC(pt, nPart, ord[0], ord[1], p1, p2);
+    if(p1 != p2){ //if powers not symmetric, add symmetric term
+      wts[iter] += getWt_nonIRC(pt, nPart, ord[0], ord[1], p2, p1);
+    }
+    iterate(2, ord, nPart);
+  } //end for each pair
 }
 
 void full3ptEEC(const float* const pt,
@@ -446,9 +487,6 @@ void full4ptEEC(const float* const pt,
    * wts: to be filled with weight values
    */
 
-#ifdef TEST
-  std::cout << "top of full 4-point EEC" << std::endl << std::endl;
-#endif
 
   dR1.clear();
   dR2.clear();
@@ -471,24 +509,10 @@ void full4ptEEC(const float* const pt,
   factor_t symFactors;
   fillSymFactors(4, compositions, symFactors);
 
-#ifdef TEST
-  std::cout << "composition\tsymmetry factor" << std::endl;
-  for (unsigned i = 0; i < symFactors.size(); ++i) {
-    for (unsigned j = 0; j < symFactors[i].size(); ++j) {
-      printOrd(compositions[i][j]);
-      std::cout << " " << symFactors[i][j] << std::endl;
-    }
-  }
-  std::cout << std::endl;
-#endif
-
   std::vector<int> cache(0, 0);
 
   //start by computing 2-point component
   //already fully-resolved, so use projected function
-#ifdef TEST
-  std::cout << "doing projected 2-way"<<std::endl;
-#endif
   projectedMway(pt, eta, phi, nPart, 4, 2, dR1, wts, compositions, symFactors, nullptr, 0, &cache);
   int n2 = choose(nPart, 2);
   dR2.insert(dR2.end(), n2, -1.);
@@ -497,18 +521,12 @@ void full4ptEEC(const float* const pt,
   dR5.insert(dR5.end(), n2, -1.);
   dR6.insert(dR6.end(), n2, -1.);
 
-#ifdef TEST
-  std::cout<<"doing resolved 3 way"<<std::endl;
-#endif
   resolved3way(pt, eta, phi, nPart, 4, dR1, dR2, dR3, wts, compositions, symFactors, cache);
   int n3 = choose(nPart, 3);
   dR4.insert(dR4.end(), n3, -1.);
   dR5.insert(dR5.end(), n3, -1.);
   dR6.insert(dR6.end(), n3, -1.);
 
-#ifdef TEST
-  std::cout << "doing resolved 4 way" << std::endl;
-#endif
   resolved4way(pt, eta, phi, nPart, 4, dR1, dR2, dR3, dR4, dR5, dR6, wts, compositions, symFactors, cache);
 }
 

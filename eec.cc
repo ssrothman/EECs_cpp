@@ -25,7 +25,7 @@ float getWt(const float* const pt,
             const int M,
             const comp_t& compositions,
             const factor_t& symFactors,
-            std::vector<std::vector<std::array<int,N+1>>>* tuples=nullptr,
+            std::vector<std::vector<std::vector<float>>>* coefs=nullptr,
             const int iDR=0) {
   float result = 0;
   for (size_t i = 0; i < compositions[M - 1].size(); ++i) {  //for each composition
@@ -34,19 +34,13 @@ float getWt(const float* const pt,
       nextWt *= intPow(pt[ord[j]], compositions[M - 1][i][j]);
 
     }  //end for each element
-    if(tuples){
-      std::array<int,N+1> arr;
-      unsigned int iarr = 0;
-      arr[iarr++] = symFactors[M-1][i];
+    //
+    //for each element, but only if we need to fill the coefs array
+    for(unsigned int iord=0; coefs && iord<ord.size(); ++iord){ 
+      coefs->at(compositions[M-1][i][iord]-1).at(ord[iord]).at(iDR) 
+        += nextWt/(M*intPow(pt[ord[iord]], compositions[M-1][i][iord]));
+    } //end for each element, coefs edition
 
-      for(unsigned int iord=0; iord<ord.size(); ++iord){
-        for(unsigned int icopy=0; icopy<compositions[M-1][i][iord]; ++icopy){
-          arr[iarr++] = ord[iord];
-        }
-      }
-
-      (*tuples)[iDR].push_back(arr);
-    }
     result += nextWt;
   }  //end for each composition
 
@@ -78,7 +72,7 @@ void projectedMway(const float* const pt,
                    const int L,
                    std::vector<int>* newCache,
                    
-                   std::vector<std::vector<std::array<int,N+1>>>* tuples=nullptr) {
+                   std::vector<std::vector<std::vector<float>>>* coefs=nullptr) {
   /*
      * compute the weight contribution from 
      * M-way combinations of particles
@@ -141,7 +135,7 @@ void projectedMway(const float* const pt,
         iterate(L, ordL, M);
       }  //end iterate over L-way combinations of M elements
     }
-    float newWt = getWt<N>(pt, nPart, ord, M, compositions, symFactors, tuples, bestIdx);
+    float newWt = getWt<N>(pt, nPart, ord, M, compositions, symFactors, coefs, bestIdx);
     wts[bestIdx] += newWt;
     if (newCache)
       (*newCache)[getIndex(ord, nPart)] = bestIdx;
@@ -307,7 +301,7 @@ void projectedEEC(const float* const pt,
                   const int maxL,
                   std::vector<float>& dRs, 
                   std::vector <float>& wts,
-                  std::vector<std::vector<std::array<int, N+1>>>* tuples) { 
+                  std::vector<std::vector<std::vector<float>>>* coefs) { 
   /*
    * EEC, projected onto shortest side
    * 
@@ -322,7 +316,9 @@ void projectedEEC(const float* const pt,
    * dRs: to be filled with dR values
    * wts: to be filled with weight values
    *
-   * tuples: if not nullptr, to be filled with tuples contributing to each dR
+   * coefs: if not nullptr, to be filled with coefficients with 
+   *  which each power of each particle contributes. 
+   *  ie $EEC(\Delta R) = \sum_i^{N_{part}} \sum_\alpha \text{coefs}\left[\alpha, i, \Delta R\right] p_T(i)^\alpha$
    */
 
   //fill dR array
@@ -333,10 +329,19 @@ void projectedEEC(const float* const pt,
   wts.clear();
   wts.resize(dRs.size());
 
-  //initialize empty tuples array
-  if(tuples){
-    tuples->clear();
-    tuples->resize(dRs.size());
+  //initialize empty coefs array
+  if(coefs){
+    coefs->clear();
+    coefs->resize(N-1);
+    for(unsigned i=0; i<coefs->size(); ++i){
+      coefs->at(i).resize(nPart);
+      for(unsigned j=0; j<nPart; ++j){
+        coefs->at(i).at(j).resize(dRs.size());
+        for(unsigned k=0; k<dRs.size(); ++k){
+          coefs->at(i).at(j).at(k) = 0;
+        }
+      }
+    }
   }
 
   //precompute compositions and symmetry factors
@@ -357,7 +362,7 @@ void projectedEEC(const float* const pt,
                     dRs, wts, 
                     compositions, symFactors, 
                     nullptr, 0, &newCache,
-                    tuples);
+                    coefs);
     } else if (M <= maxL) {
       std::swap(cache, newCache);
       projectedMway<N>(pt, eta, phi, 
@@ -366,7 +371,7 @@ void projectedEEC(const float* const pt,
                     dRs, wts, 
                     compositions, symFactors, 
                     &cache, M - 1, &newCache,
-                    tuples);
+                    coefs);
     } else {
       projectedMway<N>(pt, eta, phi, 
                     nPart, 
@@ -374,7 +379,7 @@ void projectedEEC(const float* const pt,
                     dRs, wts, 
                     compositions, symFactors, 
                     &newCache, maxL, nullptr,
-                    tuples);
+                    coefs);
     }
   }
 }
@@ -566,7 +571,7 @@ void full4ptEEC(const float* const pt,
 
 #ifdef TESTPROJ
 
-#define ORDER 4
+#define ORDER 6
 
 int main() {
   float pT[] = {1., 2., 0.5, 2., 3.};
@@ -576,24 +581,26 @@ int main() {
   float totalWT =0 ;
 
   std::vector<float> dRs, wts;
-  std::vector<std::vector<std::array<int,ORDER+1>>> tuples;
-  projectedEEC<ORDER>(pT, eta, phi, 5, 10, dRs, wts, &tuples);
+  std::vector<std::vector<std::vector<float>>> coefs;
+  projectedEEC<ORDER>(pT, eta, phi, 5, 10, dRs, wts, &coefs);
 
   std::cout << "ord\tdR\twt" << std::endl;
   size_t maxIter = dRs.size(), iter = 0;
   std::vector<int> ord = {0, 1};
   for (iter = 0; iter < maxIter; ++iter) {
     printOrd(ord);
-    std::cout << ": " << dRs[iter] << "\t" << wts[iter] << std::endl;
-    std::cout << "\t[";
-    std::vector<std::array<int, ORDER+1>> arr = tuples[iter];
-    for(unsigned i=0; i<arr.size(); ++i){
-      std::cout << arr[i][0] << ": (";
-      for(unsigned j=1; j<ORDER; ++j)
-        std::cout << arr[i][j] << ", ";
-      std::cout << arr[i][ORDER] << "), ";
+    std::cout << ": " << dRs[iter] << "\t " << wts[iter] << std::endl;
+    std::cout << "\t= ";
+    for(unsigned alpha=0; alpha<ORDER-1; ++alpha){
+      for(unsigned i=0; i<5; ++i){
+        if(coefs[alpha][i][iter]>0){
+          printf("%0.2f*(%0.2f**%d) ", coefs[alpha][i][iter], pT[i], alpha+1);
+          printf("+ ");
+        } 
+      }
     }
-    std::cout << "]" << std::endl;
+    std::cout << std::endl;
+
     iterate(2, ord, 5);
     totalWT += wts[iter];
   }

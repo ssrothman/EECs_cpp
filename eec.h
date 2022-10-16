@@ -1,17 +1,17 @@
 #ifndef EEC_H
 #define EEC_H
 
-#include<array>
+#include <vector>
 
-template <unsigned int N>
 void projectedEEC(const float* const pt,
                   const float* const eta,
                   const float* const phi,
                   const int nPart,
-                  const int maxL,
-                  std::vector<float>& dRs,
-                  std::vector<float>& wts,
-                  std::vector<std::vector<std::array<int, N>>>* tuples=nullptr);
+                  const unsigned int maxL,
+                  std::vector<float>& dRs, 
+                  std::vector <float>& wts,
+                  const unsigned int N,
+                  std::vector<std::vector<std::vector<float>>>* coefs); 
 
 void full3ptEEC(const float* const pt,
                 const float* const eta,

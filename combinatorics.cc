@@ -93,10 +93,10 @@ size_t intPow(int a, int b) {
   return result;
 }
 
-float intPow(float a, int b) {
+double intPow(double a, int b) {
   //mine, very stupid
   //should be upgraded to to square multiply
-  float result = 1;
+  double result = 1;
   for (int i = 0; i < b; ++i) {
     result *= a;
   }

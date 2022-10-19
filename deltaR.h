@@ -3,8 +3,8 @@
 
 #include <vector>
 
-float dR2(float eta1, float phi1, float eta2, float phi2);
+double dR2(double eta1, double phi1, double eta2, double phi2);
 
-void fillDR(const float* const eta, const float* const phi, const int nPart, std::vector<float>& dRs);
+void fillDR(const double* const eta, const double* const phi, const int nPart, std::vector<double>& dRs);
 
 #endif

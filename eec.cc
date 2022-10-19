@@ -18,18 +18,18 @@
 #endif
 
 
-float getWt(const float* const pt,
+double getWt(const double* const pt,
             const int nPart,
             const std::vector<int>& ord,
             const int M,
             const comp_t& compositions,
             const factor_t& symFactors,
             const unsigned int N,
-            std::vector<std::vector<std::vector<float>>>* coefs=nullptr,
+            std::vector<std::vector<std::vector<double>>>* coefs=nullptr,
             const int iDR=0) {
-  float result = 0;
+  double result = 0;
   for (size_t i = 0; i < compositions[M - 1].size(); ++i) {  //for each composition
-    float nextWt = symFactors[M - 1][i];
+    double nextWt = symFactors[M - 1][i];
     for (size_t j = 0; j < compositions[M - 1][i].size(); ++j) {  //for each element
       nextWt *= intPow(pt[ord[j]], compositions[M - 1][i][j]);
 
@@ -37,8 +37,12 @@ float getWt(const float* const pt,
     //
     //for each element, but only if we need to fill the coefs array
     for(unsigned int iord=0; coefs && iord<ord.size(); ++iord){ 
-      coefs->at(compositions[M-1][i][iord]-1).at(ord[iord]).at(iDR) 
-        += nextWt/(M*intPow(pt[ord[iord]], compositions[M-1][i][iord]));
+      //we overcount M times
+      //coefs->at(compositions[M-1][i][iord]-1).at(ord[iord]).at(iDR) 
+      //  += nextWt/(M*intPow(pt[ord[iord]], compositions[M-1][i][iord]));
+
+      coefs->at(0).at(ord[iord]).at(iDR) 
+        += nextWt/(M*pt[ord[iord]]);
     } //end for each element, coefs edition
 
     result += nextWt;
@@ -47,22 +51,22 @@ float getWt(const float* const pt,
   return result;
 }
 
-float getWt_nonIRC(const float* const pt,
+double getWt_nonIRC(const double* const pt,
                    const int nPart,
                    const int i, const int j,
                    const int p1, const int p2){
   return intPow(pt[i], p1) * intPow(pt[j], p2);
 }
 
-void projectedMway(const float* const pt,
-                   const float* const eta,
-                   const float* const phi,
+void projectedMway(const double* const pt,
+                   const double* const eta,
+                   const double* const phi,
                    const int nPart,
 
                    const int M,
 
-                   const std::vector<float>& dRs,
-                   std::vector<float>& wts,
+                   const std::vector<double>& dRs,
+                   std::vector<double>& wts,
 
                    const comp_t compositions,
                    const factor_t symFactors,
@@ -72,7 +76,7 @@ void projectedMway(const float* const pt,
                    std::vector<int>* newCache,
                    const unsigned int N,
                    
-                   std::vector<std::vector<std::vector<float>>>* coefs=nullptr) {
+                   std::vector<std::vector<std::vector<double>>>* coefs=nullptr) {
   /*
      * compute the weight contribution from 
      * M-way combinations of particles
@@ -109,7 +113,7 @@ void projectedMway(const float* const pt,
   //loop over all M-way combinations of nPart elements
   for (size_t iter = 0; iter < maxIter; ++iter) {
     int bestIdx = 0;
-    float bestDR = -1;
+    double bestDR = -1;
 
     if (M == 2) {
       bestIdx = iter;
@@ -135,7 +139,7 @@ void projectedMway(const float* const pt,
         iterate(L, ordL, M);
       }  //end iterate over L-way combinations of M elements
     }
-    float newWt = getWt(pt, nPart, ord, M, compositions, symFactors, N, coefs, bestIdx);
+    double newWt = getWt(pt, nPart, ord, M, compositions, symFactors, N, coefs, bestIdx);
     wts[bestIdx] += newWt;
     if (newCache)
       (*newCache)[getIndex(ord, nPart)] = bestIdx;
@@ -143,15 +147,15 @@ void projectedMway(const float* const pt,
   }  //end iterate over M-way combinations of nPart elements
 }
 
-void resolved3way(const float* const pt,
-                  const float* const eta,
-                  const float* const phi,
+void resolved3way(const double* const pt,
+                  const double* const eta,
+                  const double* const phi,
                   const int nPart,
 
-                  std::vector<float>& dR1,
-                  std::vector<float>& dR2,
-                  std::vector<float>& dR3,
-                  std::vector<float>& wts,
+                  std::vector<double>& dR1,
+                  std::vector<double>& dR2,
+                  std::vector<double>& dR3,
+                  std::vector<double>& wts,
 
                   const comp_t compositions,
                   const factor_t symFactors,
@@ -182,7 +186,7 @@ void resolved3way(const float* const pt,
      * cache: cached 2-way dR locations
      */
 
-  float R1, R2, R3;
+  double R1, R2, R3;
 
   if(N<3){
     std::cerr << "Can't call resolved3way() with N<3" << std::endl;
@@ -200,8 +204,8 @@ void resolved3way(const float* const pt,
     R2 = dR1[cache[getIndex(sub2, nPart)]];
     R3 = dR1[cache[getIndex(sub3, nPart)]];
 
-    std::vector<float> Rs = {R1, R2, R3};
-    std::sort(Rs.begin(), Rs.end(), std::greater<float>());
+    std::vector<double> Rs = {R1, R2, R3};
+    std::sort(Rs.begin(), Rs.end(), std::greater<double>());
 
     dR1.push_back(Rs[0]);
     dR2.push_back(Rs[1]);
@@ -211,18 +215,18 @@ void resolved3way(const float* const pt,
   }
 }
 
-void resolved4way(const float* const pt,
-                  const float* const eta,
-                  const float* const phi,
+void resolved4way(const double* const pt,
+                  const double* const eta,
+                  const double* const phi,
                   const int nPart,
 
-                  std::vector<float>& dR1,
-                  std::vector<float>& dR2,
-                  std::vector<float>& dR3,
-                  std::vector<float>& dR4,
-                  std::vector<float>& dR5,
-                  std::vector<float>& dR6,
-                  std::vector<float>& wts,
+                  std::vector<double>& dR1,
+                  std::vector<double>& dR2,
+                  std::vector<double>& dR3,
+                  std::vector<double>& dR4,
+                  std::vector<double>& dR5,
+                  std::vector<double>& dR6,
+                  std::vector<double>& wts,
 
                   const comp_t compositions,
                   const factor_t symFactors,
@@ -256,7 +260,7 @@ void resolved4way(const float* const pt,
      * cache: cached 2-way dR locations
      */
 
-  float R1, R2, R3, R4, R5, R6;
+  double R1, R2, R3, R4, R5, R6;
 
   if(N<4){
     std::cerr << "Can't call resolved4way() with N<4" << std::endl;
@@ -280,8 +284,8 @@ void resolved4way(const float* const pt,
     R5 = dR1[cache[getIndex(sub5, nPart)]];
     R6 = dR1[cache[getIndex(sub6, nPart)]];
 
-    std::vector<float> Rs = {R1, R2, R3, R4, R5, R6};
-    std::sort(Rs.begin(), Rs.end(), std::greater<float>());
+    std::vector<double> Rs = {R1, R2, R3, R4, R5, R6};
+    std::sort(Rs.begin(), Rs.end(), std::greater<double>());
 
     dR1.push_back(Rs[0]);
     dR2.push_back(Rs[1]);
@@ -295,15 +299,15 @@ void resolved4way(const float* const pt,
   }
 }
 
-void projectedEEC(const float* const pt,
-                  const float* const eta,
-                  const float* const phi,
+void projectedEEC(const double* const pt,
+                  const double* const eta,
+                  const double* const phi,
                   const int nPart,
                   const unsigned int maxL,
-                  std::vector<float>& dRs, 
-                  std::vector <float>& wts,
+                  std::vector<double>& dRs, 
+                  std::vector <double>& wts,
                   const unsigned int N,
-                  std::vector<std::vector<std::vector<float>>>* coefs) { 
+                  std::vector<std::vector<std::vector<double>>>* coefs) { 
   /*
    * EEC, projected onto shortest side
    * 
@@ -391,13 +395,13 @@ void projectedEEC(const float* const pt,
 
 
 
-void EECnonIRC(const float* const pt,
-               const float* const eta,
-               const float* const phi,
+void EECnonIRC(const double* const pt,
+               const double* const eta,
+               const double* const phi,
                const int nPart,
                const int p1, const int p2,
-               std::vector<float>& dRs,
-               std::vector<float>& wts){
+               std::vector<double>& dRs,
+               std::vector<double>& wts){
   /*
    * EEC, with non IRC-safe energy weighting
    * Currently only support 2-way EEC
@@ -437,14 +441,14 @@ void EECnonIRC(const float* const pt,
   } //end for each pair
 }
 
-void full3ptEEC(const float* const pt,
-                const float* const eta,
-                const float* const phi,
+void full3ptEEC(const double* const pt,
+                const double* const eta,
+                const double* const phi,
                 const int nPart,
-                std::vector<float>& dR1,
-                std::vector<float>& dR2,
-                std::vector<float>& dR3,
-                std::vector<float>& wts) {
+                std::vector<double>& dR1,
+                std::vector<double>& dR2,
+                std::vector<double>& dR3,
+                std::vector<double>& wts) {
   /*
    * fully resolved 3-point correaltor
    * 
@@ -504,17 +508,17 @@ void full3ptEEC(const float* const pt,
   resolved3way(pt, eta, phi, nPart, dR1, dR2, dR3, wts, compositions, symFactors, cache, 3);
 }
 
-void full4ptEEC(const float* const pt,
-                const float* const eta,
-                const float* const phi,
+void full4ptEEC(const double* const pt,
+                const double* const eta,
+                const double* const phi,
                 const int nPart,
-                std::vector<float>& dR1,
-                std::vector<float>& dR2,
-                std::vector<float>& dR3,
-                std::vector<float>& dR4,
-                std::vector<float>& dR5,
-                std::vector<float>& dR6,
-                std::vector<float>& wts) {
+                std::vector<double>& dR1,
+                std::vector<double>& dR2,
+                std::vector<double>& dR3,
+                std::vector<double>& dR4,
+                std::vector<double>& dR5,
+                std::vector<double>& dR6,
+                std::vector<double>& wts) {
   /*
    * fully resolved 4-point correaltor
    * 
@@ -579,14 +583,14 @@ void full4ptEEC(const float* const pt,
 #define ORDER 6
 
 int main() {
-  float pT[] = {1., 2., 0.5, 2., 3.};
-  float eta[] = {0., 0.1, 0.4, 1.0, 0.4};
-  float phi[] = {0., 0.2, 0.4, 0.0, -0.5};
+  double pT[] = {1., 2., 0.5, 2., 3.};
+  double eta[] = {0., 0.1, 0.4, 1.0, 0.4};
+  double phi[] = {0., 0.2, 0.4, 0.0, -0.5};
 
-  float totalWT =0 ;
+  double totalWT =0 ;
 
-  std::vector<float> dRs, wts;
-  std::vector<std::vector<std::vector<float>>> coefs;
+  std::vector<double> dRs, wts;
+  std::vector<std::vector<std::vector<double>>> coefs;
   projectedEEC(pT, eta, phi, 5, 10, dRs, wts, ORDER, &coefs);
 
   std::cout << "ord\tdR\twt" << std::endl;
@@ -615,13 +619,13 @@ int main() {
 
 #ifdef TESTFULL
 int main() {
-  float pT[] = {1., 2., 0.5, 2., 3.};
-  float eta[] = {0., 0.1, 0.4, 1.0, 0.4};
-  float phi[] = {0., 0.2, 0.4, 0.0, -0.5};
+  double pT[] = {1., 2., 0.5, 2., 3.};
+  double eta[] = {0., 0.1, 0.4, 1.0, 0.4};
+  double phi[] = {0., 0.2, 0.4, 0.0, -0.5};
 
-  std::vector<float> dR1, dR2, dR3, dR4, dR5, dR6, wts;
+  std::vector<double> dR1, dR2, dR3, dR4, dR5, dR6, wts;
 
-  float totalWT=0;
+  double totalWT=0;
 
   full4ptEEC(pT, eta, phi, 5, dR1, dR2, dR3, dR4, dR5, dR6, wts);
   

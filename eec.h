@@ -3,43 +3,43 @@
 
 #include <vector>
 
-void projectedEEC(const float* const pt,
-                  const float* const eta,
-                  const float* const phi,
+void projectedEEC(const double* const pt,
+                  const double* const eta,
+                  const double* const phi,
                   const int nPart,
                   const unsigned int maxL,
-                  std::vector<float>& dRs, 
-                  std::vector <float>& wts,
+                  std::vector<double>& dRs, 
+                  std::vector <double>& wts,
                   const unsigned int N,
-                  std::vector<std::vector<std::vector<float>>>* coefs); 
+                  std::vector<std::vector<std::vector<double>>>* coefs); 
 
-void full3ptEEC(const float* const pt,
-                const float* const eta,
-                const float* const phi,
+void full3ptEEC(const double* const pt,
+                const double* const eta,
+                const double* const phi,
                 const int nPart,
-                std::vector<float>& dR1,
-                std::vector<float>& dR2,
-                std::vector<float>& dR3,
-                std::vector<float>& wts);
+                std::vector<double>& dR1,
+                std::vector<double>& dR2,
+                std::vector<double>& dR3,
+                std::vector<double>& wts);
 
-void full4ptEEC(const float* const pt,
-                const float* const eta,
-                const float* const phi,
+void full4ptEEC(const double* const pt,
+                const double* const eta,
+                const double* const phi,
                 const int nPart,
-                std::vector<float>& dR1,
-                std::vector<float>& dR2,
-                std::vector<float>& dR3,
-                std::vector<float>& dR4,
-                std::vector<float>& dR5,
-                std::vector<float>& dR6,
-                std::vector<float>& wts);
+                std::vector<double>& dR1,
+                std::vector<double>& dR2,
+                std::vector<double>& dR3,
+                std::vector<double>& dR4,
+                std::vector<double>& dR5,
+                std::vector<double>& dR6,
+                std::vector<double>& wts);
 
-void EECnonIRC(const float* const pt,
-               const float* const eta,
-               const float* const phi,
+void EECnonIRC(const double* const pt,
+               const double* const eta,
+               const double* const phi,
                const int nPart,
                const int p1, const int p2,
-               std::vector<float>& dRs,
-               std::vector<float>& wts);
+               std::vector<double>& dRs,
+               std::vector<double>& wts);
 
 #endif

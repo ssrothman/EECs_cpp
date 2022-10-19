@@ -2,12 +2,12 @@
 
 #include "deltaR.h"
 
-float dR2(float eta1, float phi1, float eta2, float phi2) {
+double dR2(double eta1, double phi1, double eta2, double phi2) {
   /*
     * Compute delta R^2 between (eta1, phi1) and (eta2, phi2)
     */
-  float deta = eta2 - eta1;
-  float dphi = phi2 - phi1;
+  double deta = eta2 - eta1;
+  double dphi = phi2 - phi1;
   if (dphi > M_PI) {
     dphi = 2 * M_PI - dphi;
   } else if (dphi < -M_PI) {
@@ -16,7 +16,7 @@ float dR2(float eta1, float phi1, float eta2, float phi2) {
   return deta * deta + dphi * dphi;
 }
 
-void fillDR(const float* const eta, const float* const phi, const int nPart, std::vector<float>& dRs) {
+void fillDR(const double* const eta, const double* const phi, const int nPart, std::vector<double>& dRs) {
   /*
    *  Compute the pairwise delta r^2 between all the particles in the jet
    *  

@@ -14,7 +14,7 @@ void fillSymFactors(const int N, const comp_t& compositions, factor_t& out);
 
 size_t intPow(int a, int b);
 
-float intPow(float a, int b);
+double intPow(double a, int b);
 
 size_t choose(int n, int k);
 

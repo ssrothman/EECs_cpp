@@ -12,22 +12,22 @@
 #include <algorithm>
 
 typedef uint16_t idx_t;
-typedef float coord_t;
+typedef double coord_t;
 typedef std::tuple<idx_t, idx_t> pair;
 typedef std::vector<std::vector<std::vector<idx_t>>> comp_t;
 typedef std::vector<std::vector<idx_t>> factor_t;
 
-void eec_onejet(float* jet, int nPart, int nFeat, int N, float* dRs, int nDR, float* wts, int nWT, int maxL);
+void eec_onejet(double* jet, int nPart, int nFeat, int N, double* dRs, int nDR, double* wts, int nWT, int maxL);
 
-void eec(float* jets,
+void eec(double* jets,
          int nPartTot,
          int nFeat,
          int* jetIdxs,
          int nJets,
          int N,
-         float* dRs,
+         double* dRs,
          int nDRTot,
-         float* wts,
+         double* wts,
          int nWTTot,
          int* dRIdxs,
          int nDRIdxs,

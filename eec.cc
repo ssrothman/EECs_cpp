@@ -42,7 +42,7 @@ double getWt(const double* const pt,
       //  += nextWt/(M*intPow(pt[ord[iord]], compositions[M-1][i][iord]));
 
       coefs->at(0).at(ord[iord]).at(iDR) 
-        += nextWt/(M*pt[ord[iord]]);
+        += nextWt/(M);
     } //end for each element, coefs edition
 
     result += nextWt;

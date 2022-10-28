@@ -83,26 +83,6 @@ void fillSymFactors(const int N, const comp_t& compositions, factor_t& out) {
   }  //end loop over composition length
 }
 
-size_t intPow(int a, int b) {
-  //mine, very stupid
-  //should be upgraded to to square multiply
-  size_t result = 1;
-  for (int i = 0; i < b; ++i) {
-    result *= a;
-  }
-  return result;
-}
-
-double intPow(double a, int b) {
-  //mine, very stupid
-  //should be upgraded to to square multiply
-  double result = 1;
-  for (int i = 0; i < b; ++i) {
-    result *= a;
-  }
-  return result;
-}
-
 size_t choose(int n, int k) {
   if (k > n)
     return 0;
@@ -118,3 +98,15 @@ size_t choose(int n, int k) {
   }
   return result;
 }
+
+size_t simp(const size_t nPart, const size_t order){
+  size_t result = 1;
+  for(unsigned i=0; i<(unsigned)order; ++i){
+    result *= (nPart - i);
+  }
+  result/=fact(order);
+  printf("simp(%lu, %lu) = %lu\n", nPart, order, result);
+  return result;
+}
+
+

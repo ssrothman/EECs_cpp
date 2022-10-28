@@ -2,6 +2,11 @@
 #define EEC_H
 
 #include <vector>
+#include <utility>
+#include <tuple>
+#include "vecND.h"
+
+typedef std::pair<std::vector<int>, double> tuple_t;
 
 void projectedEEC(const double* const pt,
                   const double* const eta,
@@ -11,7 +16,10 @@ void projectedEEC(const double* const pt,
                   std::vector<double>& dRs, 
                   std::vector <double>& wts,
                   const unsigned int N,
-                  std::vector<std::vector<std::vector<double>>>* coefs); 
+                  std::vector<std::vector<std::vector<double>>>* coefs,
+                  vecND<double>* tuplewts,
+                  vecND<int>* tupleiDR
+                  ); 
 
 void full3ptEEC(const double* const pt,
                 const double* const eta,

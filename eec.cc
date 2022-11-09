@@ -44,11 +44,8 @@ double getWt(const double* const pt,
     //for each element, but only if we need to fill the coefs array
     for(unsigned int iord=0; coefs && iord<ord.size(); ++iord){ 
       //we overcount M times
-      //coefs->at(compositions[M-1][i][iord]-1).at(ord[iord]).at(iDR) 
-      //  += nextWt/(M*intPow(pt[ord[iord]], compositions[M-1][i][iord]));
-
       coefs->at(0).at(ord[iord]).at(iDR) 
-        += nextWt/(M);
+        += nextWt*compositions[M-1][i][iord]/N;
     } //end for each element, coefs edition
 
     if(tuplewts){
@@ -426,6 +423,9 @@ void projectedEEC(const double* const pt,
       tuplewts->at(zeroOrd) = nextwt;
       tupleiDR->at(zeroOrd) = dRs.size()-1;
     }
+    if(coefs){
+      coefs->at(0).at(iPart).push_back(nextwt);
+    }
   }
   wts.push_back(zerowt);
 }
@@ -617,7 +617,7 @@ void full4ptEEC(const double* const pt,
 
 #ifdef TESTPROJ
 
-#define ORDER 4
+#define ORDER 3
 
 int main() {
   double pT[] = {1., 2., 0.5, 2., 3.};

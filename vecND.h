@@ -23,6 +23,10 @@ class vecND{
       return vec_.at(idx_(ord));
     }
 
+  unsigned NPart() const {
+    return N_;
+  }
+
   private:
     std::vector<T> vec_;
     const unsigned dim_, N_;
